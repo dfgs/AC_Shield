@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36202.13 d17.14
+VisualStudioVersion = 17.14.36202.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AC_Shield.Console", "AC_Shield.Console\AC_Shield.Console.csproj", "{DC434393-DBC0-4245-8628-C6B83E5A2E1F}"
 EndProject
@@ -14,6 +14,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModuleLib", "..\ModuleLib\ModuleLib\ModuleLib.csproj", "{22E31622-D6D9-2E03-4B8F-73E51B60BB7B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResultTypeLib", "..\ResultTypeLib\ResultTypeLib\ResultTypeLib.csproj", "{BEA4E766-978F-DDD8-C26B-73D31C5A983D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AC_Shield.Service", "AC_Shield.Service\AC_Shield.Service.csproj", "{7833416A-0C41-4320-B10C-973E87ABE5A8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,6 +43,10 @@ Global
 		{BEA4E766-978F-DDD8-C26B-73D31C5A983D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BEA4E766-978F-DDD8-C26B-73D31C5A983D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BEA4E766-978F-DDD8-C26B-73D31C5A983D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7833416A-0C41-4320-B10C-973E87ABE5A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7833416A-0C41-4320-B10C-973E87ABE5A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7833416A-0C41-4320-B10C-973E87ABE5A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7833416A-0C41-4320-B10C-973E87ABE5A8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

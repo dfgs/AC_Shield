@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-AC_Shield.Service-cc81f1ea-4ca8-4a16-adf6-0fdebebb832a</UserSecretsId>
+
+		<OutputType>exe</OutputType>
+		<PublishSingleFile Condition="'$(Configuration)' == 'Release'">true</PublishSingleFile>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+ 
+
+  
+
+  <ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.10" />
+	</ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\LogLib\LogLib\LogLib.csproj" />
+    <ProjectReference Include="..\..\ModuleLib\ModuleLib\ModuleLib.csproj" />
+    <ProjectReference Include="..\..\ResultTypeLib\ResultTypeLib\ResultTypeLib.csproj" />
+    <ProjectReference Include="..\AC_Shield.Core\AC_Shield.Core.csproj" />
+  </ItemGroup>
+</Project>

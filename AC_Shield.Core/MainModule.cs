@@ -53,7 +53,7 @@ namespace AC_Shield.Core
 				return;
 			}
 
-			string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AC_Shield");
+			string path = Path.Combine(@"C:\ProgramData", "AC_Shield");
 
 			databaseModule = new DatabaseModule(Logger, path, "AC_Shield.db", dBCleanIntervalSeconds, cdrRetentionSeconds, blackListRetentionSeconds);
 			cdrReceiverModule = new CDRReceiverModule(Logger, databaseModule, port, ipGroup);
