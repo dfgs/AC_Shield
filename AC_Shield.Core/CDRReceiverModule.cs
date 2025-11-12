@@ -68,7 +68,7 @@ namespace AC_Shield.Core
 				cdr.DestIp = parts[7].Trim();
 				cdr.DestPort = parts[8].Trim();
 				cdr.TransportType = parts[9].Trim();
-				cdr.SrcURI = parts[10];
+				cdr.SrcURI = parts[10].Trim();
 				cdr.SrcURIBeforeMap = parts[11].Trim();
 				cdr.DstURI = parts[12].Trim();
 				cdr.DstURIBeforeMap = parts[13].Trim();
@@ -105,9 +105,8 @@ namespace AC_Shield.Core
 		}
 		protected override void ThreadLoop()
 		{
-			bool result;
 			IPEndPoint? groupEP=null;
-			byte[]? bytes=null;
+			byte[] bytes;
 			string syslog;
 			Match match;
 			CDR? cdr=null;
@@ -131,15 +130,12 @@ namespace AC_Shield.Core
 			Log(Message.Information("Waiting for data or quit signal"));
 			while (State == ModuleStates.Started)
 			{
-				
-				result=Try(() =>  listener.Receive(ref groupEP) ).Match(
+
+				if (!Try(() => listener.Receive(ref groupEP)).Match(
 					success => bytes = success,
 					failure => Log(Message.Error($"Error during data reception"))
-				);
-				if (!result) break;
-
-				if (bytes==null) continue;
-
+				).Succeeded(out bytes)) return;
+				
 				syslog = Encoding.ASCII.GetString(bytes, 0, bytes.Length);
 				Log(Message.Debug(syslog));
 

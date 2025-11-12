@@ -16,20 +16,39 @@ namespace AC_Shield.Console
 
 		static void Main(string[] args)
 		{
-			logger=new ConsoleLogger(new DefaultLogFormatter());
+			int port;
+			string ipGroup;
+			int checkIntervalSeconds;
+			int cdrHistoryPeriodSeconds;
+			int maxCallsThreshold;
+			int blackListDurationSeconds;
+
+			logger = new ConsoleLogger(new DefaultLogFormatter());
 			
 			logger.Log(new Log(DateTime.Now,0,"Main","Main", Message.Information("Starting AC_Shield console")));
 			
 			databaseModule =new DatabaseModule(logger, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"AC_Shield"),"AC_Shield.db");
 			databaseModule.Start();
 
-			int port= int.Parse(ConfigurationManager.AppSettings["Port"]??"514");
-			string ipGroup = ConfigurationManager.AppSettings["IPGroup"] ?? "LAN";
+			try
+			{
+				port = int.Parse(ConfigurationManager.AppSettings["Port"] ?? "514");
+				ipGroup = ConfigurationManager.AppSettings["IPGroup"] ?? "LAN";
+				checkIntervalSeconds = int.Parse(ConfigurationManager.AppSettings["CheckIntervalSeconds"] ?? "60");
+				cdrHistoryPeriodSeconds = int.Parse(ConfigurationManager.AppSettings["CDRHistoryPeriodSeconds"] ?? "60");
+				maxCallsThreshold = int.Parse(ConfigurationManager.AppSettings["MaxCallsThreshold"] ?? "10");
+				blackListDurationSeconds = int.Parse(ConfigurationManager.AppSettings["BlackListDurationSeconds"] ?? "3600");
+			}
+			catch (Exception ex)
+			{
+				logger.Log(new Log(DateTime.Now, 0, "Main", "Main", Message.Fatal($"Invalid parameter find in app.config file: {ex.Message}")));
+				return;
+			}
 
 			cdrReceiverModule =new CDRReceiverModule(logger,databaseModule, port, ipGroup);
 			cdrReceiverModule.Start();
 
-			ruleCheckerModule = new RuleCheckerModule(logger, databaseModule);
+			ruleCheckerModule = new RuleCheckerModule(logger, databaseModule,checkIntervalSeconds,cdrHistoryPeriodSeconds,maxCallsThreshold,blackListDurationSeconds);
 			ruleCheckerModule.Start();
 
 
