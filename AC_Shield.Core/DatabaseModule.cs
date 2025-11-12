@@ -11,11 +11,17 @@ namespace AC_Shield.Core
 		private string databasePath;
 		private string databaseName;
 		private SqliteConnection? connection;
+		private int dbCleanIntervalSeconds;
+		private int cdrRetentionSeconds;
+		private int blackListRetentionSeconds;
 
-		public DatabaseModule(ILogger Logger, string DatabasePath,string DatabaseName) : base(Logger, ThreadPriority.Normal,5000)
+		public DatabaseModule(ILogger Logger, string DatabasePath,string DatabaseName,int DBCleanIntervalSeconds, int CDRRetentionSeconds, int BlackListRetentionSeconds) : base(Logger, ThreadPriority.Normal,5000)
 		{
 			this.databasePath = DatabasePath;
 			this.databaseName = DatabaseName;
+			this.dbCleanIntervalSeconds = DBCleanIntervalSeconds;
+			this.cdrRetentionSeconds = CDRRetentionSeconds;
+			this.blackListRetentionSeconds = BlackListRetentionSeconds;
 			this.connection = null;
 		}
 
@@ -26,12 +32,12 @@ namespace AC_Shield.Core
 
 			databaseFileName = System.IO.Path.Combine(databasePath, databaseName);
 
-			if (System.IO.File.Exists(databaseFileName))
+			/*if (System.IO.File.Exists(databaseFileName))
 			{
 				Log(Message.Information($"Database file found at {databaseFileName}, deleting file"));
 				result=Try(() => System.IO.File.Delete(databaseFileName)).Select(success => true);
 				if (!result.Succeeded()) return result;
-			}					
+			}//*/					
 
 			if (!System.IO.Directory.Exists(databasePath))
 			{
@@ -40,10 +46,14 @@ namespace AC_Shield.Core
 				if (!result.Succeeded()) return result;
 			}
 
-			Log(Message.Information($"Create new database file at {databaseFileName}"));
-			result = Try(() => System.IO.File.Create(databaseFileName).Close()).Select(success => true);
-
-			return result;
+			if (!System.IO.File.Exists(databaseFileName))
+			{
+				Log(Message.Information($"Create new database file at {databaseFileName}"));
+				result = Try(() => System.IO.File.Create(databaseFileName).Close()).Select(success => true);
+				return result;
+			}
+			
+			return Result.Success(true);
 		}
 
 		private IResult<bool> CreateTables()
@@ -76,7 +86,16 @@ namespace AC_Shield.Core
 			return Try(()=>insert.ExecuteNonQuery()).Select(success => true);
 		}
 
-		public IResult<bool> UpdateBlackList(string IPGroup,string SourceURI,DateTime BlackListStartTime,DateTime BlackListEndTime)
+		private IResult<bool> PurgeCDR(DateTime BeforeDateTime)
+		{
+			string command = "DELETE FROM CDR WHERE TimeStamp<=@TimeStamp";
+			SqliteCommand delete = new SqliteCommand(command, connection);
+			delete.Parameters.AddWithValue("@TimeStamp", BeforeDateTime);
+
+			return Try(() => delete.ExecuteNonQuery()).Select(success => true);
+		}
+
+		public IResult<bool> UpdateBlackList(BlackListItem BlackList)
 		{
 			string command;
 			SqliteCommand insert, select,update;
@@ -84,34 +103,69 @@ namespace AC_Shield.Core
 
 			command = "select ID from BlackList where IPGroup=@IPGroup and SourceURI=@SourceURI";
 			select=new SqliteCommand(command, connection);
-			select.Parameters.AddWithValue("@IPGroup", IPGroup);
-			select.Parameters.AddWithValue("@SourceURI", SourceURI);
+			select.Parameters.AddWithValue("@IPGroup", BlackList.IPGroup);
+			select.Parameters.AddWithValue("@SourceURI", BlackList.SourceURI);
 			if (!Try(()=>select.ExecuteScalar()).Succeeded(out id)) return Result.Fail<bool>(new Exception("Failed to query BlackList table"));
 
 			if (id!=null)
 			{
-				Log(Message.Information($"Source URI {SourceURI} in IP Group {IPGroup} is already black listed, updating end time"));
+				Log(Message.Information($"Source URI {BlackList.SourceURI} in IP Group {BlackList.IPGroup} is already black listed, updating end time"));
 				command = "update BlackList set BlackListEndTime=@BlackListEndTime where ID=@ID";
 				update = new SqliteCommand(command, connection);
-				update.Parameters.AddWithValue("@BlackListEndTime", BlackListEndTime);
+				update.Parameters.AddWithValue("@BlackListEndTime", BlackList.BlackListEndTime);
 				update.Parameters.AddWithValue("@ID", id);
 				return Try(() => update.ExecuteNonQuery()).Select(success => true);
 			}
 			else
 			{
-				Log(Message.Information($"Inserting Source URI {SourceURI}/IP Group {IPGroup} in black list"));
+				Log(Message.Information($"Inserting Source URI {BlackList.SourceURI}/IP Group {BlackList.IPGroup} in black list"));
 				command = "INSERT INTO BlackList (IPGroup , SourceURI, BlackListStartTime, BlackListEndTime) VALUES (@IPGroup, @SourceURI , @BlackListStartTime, @BlackListEndTime)";
 				insert = new SqliteCommand(command, connection);
-				insert.Parameters.AddWithValue("@IPGroup", IPGroup);
-				insert.Parameters.AddWithValue("@SourceURI", SourceURI);
-				insert.Parameters.AddWithValue("@BlackListStartTime", BlackListStartTime);
-				insert.Parameters.AddWithValue("@BlackListEndTime", BlackListEndTime);
+				insert.Parameters.AddWithValue("@IPGroup", BlackList.IPGroup);
+				insert.Parameters.AddWithValue("@SourceURI", BlackList.SourceURI);
+				insert.Parameters.AddWithValue("@BlackListStartTime", BlackList.BlackListStartTime);
+				insert.Parameters.AddWithValue("@BlackListEndTime", BlackList.BlackListEndTime);
 				return Try(() => insert.ExecuteNonQuery()).Select(success => true);
 
 			}
 
 
 		}
+
+		private IResult<bool> PurgeBlackList(DateTime BeforeDateTime)
+		{
+			string command = "DELETE FROM BlackList WHERE BlackListEndTime<=@BlackListEndTime";
+			SqliteCommand delete = new SqliteCommand(command, connection);
+			delete.Parameters.AddWithValue("@BlackListEndTime", BeforeDateTime);
+
+			return Try(() => delete.ExecuteNonQuery()).Select(success => true);
+		}
+
+		private IResult<BlackListItem[]> ReadBlackListItems(SqliteDataReader Reader)
+		{
+			List<BlackListItem> items = new List<BlackListItem>();
+			while (Reader.Read())
+			{
+				BlackListItem item = new BlackListItem();
+				item.IPGroup = Reader.GetString(0);
+				item.SourceURI = Reader.GetString(1);
+				item.BlackListStartTime = Reader.GetDateTime(2);
+				item.BlackListEndTime = Reader.GetDateTime(3);
+				items.Add(item);
+			}
+			return Result.Success(items.ToArray());
+		}
+
+		public IResult<BlackListItem[]> GetBlackList(DateTime StartDate)
+		{
+			string command = "SELECT IPGroup, SourceURI,BlackListStartTime,BlackListEndTime FROM BlackList where BlackListEndTime>@StartDate";
+			SqliteCommand select = new SqliteCommand(command, connection);
+			select.Parameters.AddWithValue("@StartDate", StartDate);
+
+			return Try(() => select.ExecuteReader()).SelectResult(reader => ReadBlackListItems(reader), failure => failure);
+		}
+
+
 
 		private IResult<CallerReport[]> ReadCallerReports(SqliteDataReader Reader)
 		{
@@ -135,6 +189,10 @@ namespace AC_Shield.Core
 
 			return Try(() => select.ExecuteReader()).SelectResult(reader => ReadCallerReports(reader),failure=>failure);
 		}
+
+
+
+
 
 		protected override void ThreadLoop()
 		{
@@ -166,7 +224,20 @@ namespace AC_Shield.Core
 
 			while (State == ModuleStates.Started)
 			{
-				this.WaitHandles(-1, QuitEvent);
+				this.WaitHandles(dbCleanIntervalSeconds*1000, QuitEvent);
+				if (State != ModuleStates.Started) break;
+				
+				Log(Message.Information("Cleaning old data from database"));
+				PurgeCDR(DateTime.Now.AddSeconds(-cdrRetentionSeconds)).Match(
+					success => Log(Message.Information("Old CDR data purged successfully")),
+					failure => Log(Message.Error($"Failed to purge old CDR data: {failure.Message}"))
+				);
+				
+				PurgeBlackList(DateTime.Now.AddSeconds(-blackListRetentionSeconds)).Match(
+					success => Log(Message.Information("Black list purged successfully")),
+					failure => Log(Message.Error($"Failed to purge black list: {failure.Message}"))
+				);
+
 			}
 		}
 

@@ -1,0 +1,75 @@
+﻿using LogLib;
+using ModuleLib;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+
+namespace AC_Shield.Core
+{
+	public class DialPlanGeneratorModule:ThreadModule
+	{
+		private Regex prefixRegex = new Regex(@"(?<Prefix>[^@]+).*");
+		private DatabaseModule databaseModule;
+		private int dialPlanGenerateIntervalSeconds;
+		private string dialPlanName ;
+		private string blackListTag;
+		private string exportPath;
+
+		public DialPlanGeneratorModule(ILogger Logger, DatabaseModule DatabaseModule, int DialPlanGenerateIntervalSeconds,string ExportPath, string DialPlanName, string BlackListTag) : base(Logger, ThreadPriority.Normal, 5000)
+		{
+			this.exportPath = ExportPath;
+			this.databaseModule = DatabaseModule;
+			this.dialPlanGenerateIntervalSeconds = DialPlanGenerateIntervalSeconds;
+			this.dialPlanName = DialPlanName;
+			this.blackListTag = BlackListTag;
+		}
+		private void CreateCSV(BlackListItem[] Items)
+		{
+			string dialPlanFileName;
+			string prefix;
+			Match match;
+
+			dialPlanFileName = System.IO.Path.Combine(exportPath, $"{dialPlanName}_{DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")}.csv");
+			using(FileStream stream=new FileStream(dialPlanFileName,FileMode.Create))
+			{
+				StreamWriter writer=new StreamWriter(stream);
+				writer.WriteLine("DialPlanName,Name,Prefix,Tag");
+				foreach (BlackListItem item in Items)
+				{
+					match=prefixRegex.Match(item.SourceURI);
+					if (!match.Success) continue;
+					prefix=match.Groups["Prefix"].Value;
+					writer.WriteLine($"\"{dialPlanName}\",\"{prefix}\",\"{prefix}#\",\"{blackListTag}\"");
+				}
+				writer.Flush();
+			}
+		}
+
+		protected override void ThreadLoop()
+		{
+			BlackListItem[] blackList;
+
+			Log(Message.Information("Waiting for data or quit signal"));
+			while (State == ModuleStates.Started)
+			{
+				this.WaitHandles(dialPlanGenerateIntervalSeconds * 1000, QuitEvent);
+
+				if (!databaseModule.GetBlackList(DateTime.Now).Match(
+					success => Log(Message.Information($"Black list collected succesfully")),
+					failure => Log(Message.Error($"Failed to get black list: {failure.Message}"))
+				).Succeeded(out blackList)) continue;
+
+				Try(()=>CreateCSV(blackList)).Match(
+					success => Log(Message.Information($"Dial plan generated successfully")),
+					failure => Log(Message.Error($"Failed to generate dial plan: {failure.Message}"))
+				);
+
+			}
+
+		}
+	}
+}
