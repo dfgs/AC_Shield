@@ -55,7 +55,7 @@ namespace AC_Shield.Core
 				builder.Logging.ClearProviders();
 				builder.Logging.AddProvider(new AspLoggerProvider(Logger));
 				var app = builder.Build();
-				app.Urls.Add($"http://localhost:{port}");
+				app.Urls.Add($"http://0.0.0.0:{port}");
 
 
 				app.MapGet("/GetCallerStatus/{Caller}", (string caller) => GetStatus(caller));
