@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace AC_Shield.Core
 {
 	public class CDR 
 	{
+		private static Regex prefixRegex = new Regex(@"(?<Prefix>[^@]+).*");
+
 		public string? SIPCallId { get; set; }
 		public string? SessionId { get; set; }
 		public string? SBCReportType { get; set; }
@@ -47,6 +50,18 @@ namespace AC_Shield.Core
 		public string? Trigger { get; set; }
 		public string? LegId { get; set; }
 		public string? VoiceAIConnectorName { get; set; }
+
+		public string? GetCallerNumber()
+		{
+			string prefix;
+			Match match;
+
+			if( SrcURI==null ) return null;
+			match = prefixRegex.Match(SrcURI);
+			if (!match.Success) return null;
+			prefix = match.Groups["Prefix"].Value;
+			return prefix;
+		}
 
 	}
 }

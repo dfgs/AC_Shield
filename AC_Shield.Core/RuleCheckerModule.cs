@@ -43,10 +43,10 @@ namespace AC_Shield.Core
 
 				foreach (CallerReport report in reports)
 				{
-					Log(Message.Information($"Report: {report.SourceURI}/{report.Count} calls"));
+					Log(Message.Information($"Report: {report.Caller}/{report.Count} calls"));
 					if (report.Count<maxCallsThreshold) continue;
-					Log(Message.Information($"Caller {report.SourceURI} has reached max call threshold, adding caller to black list"));
-					blackList = new BlackListItem(report.IPGroup, report.SourceURI, DateTime.Now, DateTime.Now.AddSeconds(blackListDurationSeconds));
+					Log(Message.Information($"Caller {report.Caller} has reached max call threshold, adding caller to black list"));
+					blackList = new BlackListItem(report.IPGroup, report.Caller, DateTime.Now, DateTime.Now.AddSeconds(blackListDurationSeconds));
 					databaseModule.UpdateBlackList(blackList);
 				}
 

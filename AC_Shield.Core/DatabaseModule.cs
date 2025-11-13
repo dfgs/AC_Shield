@@ -61,10 +61,10 @@ namespace AC_Shield.Core
 			string command;
 			SqliteCommand createCDRTable,createBlackListTable;
 
-			command = "CREATE TABLE IF NOT EXISTS CDR (ID INTEGER PRIMARY KEY AUTOINCREMENT, TimeStamp DateTime NOT NULL,IPGroup NVARCHAR(256) NOT NULL,  SourceURI NVARCHAR(1024) NOT NULL)";
+			command = "CREATE TABLE IF NOT EXISTS CDR (ID INTEGER PRIMARY KEY AUTOINCREMENT, TimeStamp DateTime NOT NULL,IPGroup NVARCHAR(256) NOT NULL,  Caller NVARCHAR(1024) NOT NULL)";
 			createCDRTable = new SqliteCommand(command, connection);
 
-			command = "CREATE TABLE IF NOT EXISTS BlackList (ID INTEGER PRIMARY KEY AUTOINCREMENT, BlackListStartTime DateTime NOT NULL,BlackListEndTime DateTime NOT NULL,IPGroup NVARCHAR(256) NOT NULL, SourceURI NVARCHAR(1024) NOT NULL)";
+			command = "CREATE TABLE IF NOT EXISTS BlackList (ID INTEGER PRIMARY KEY AUTOINCREMENT, BlackListStartTime DateTime NOT NULL,BlackListEndTime DateTime NOT NULL,IPGroup NVARCHAR(256) NOT NULL, Caller NVARCHAR(1024) NOT NULL)";
 			createBlackListTable = new SqliteCommand(command, connection);
 
 
@@ -77,11 +77,16 @@ namespace AC_Shield.Core
 
 		public IResult<bool> InsertCDR(CDR CDR)
 		{
-			string command = "INSERT INTO CDR (TimeStamp , IPGroup , SourceURI) VALUES (@TimeStamp , @IPGroup , @SourceURI)";
+			string? caller;
+
+			caller = CDR.GetCallerNumber();
+			if (caller==null) return Result.Fail<bool>(new Exception("CDR Caller number is null"));
+
+			string command = "INSERT INTO CDR (TimeStamp , IPGroup , Caller) VALUES (@TimeStamp , @IPGroup , @Caller)";
 			SqliteCommand insert = new SqliteCommand(command, connection);
 			insert.Parameters.AddWithValue("@TimeStamp", CDR.SetupTime);
 			insert.Parameters.AddWithValue("@IPGroup", CDR.IPGroup);
-			insert.Parameters.AddWithValue("@SourceURI", CDR.SrcURI);
+			insert.Parameters.AddWithValue("@Caller", caller);
 			
 			return Try(()=>insert.ExecuteNonQuery()).Select(success => true);
 		}
@@ -101,15 +106,15 @@ namespace AC_Shield.Core
 			SqliteCommand insert, select,update;
 			object? id;
 
-			command = "select ID from BlackList where IPGroup=@IPGroup and SourceURI=@SourceURI";
+			command = "select ID from BlackList where IPGroup=@IPGroup and Caller=@Caller";
 			select=new SqliteCommand(command, connection);
 			select.Parameters.AddWithValue("@IPGroup", BlackList.IPGroup);
-			select.Parameters.AddWithValue("@SourceURI", BlackList.SourceURI);
+			select.Parameters.AddWithValue("@Caller", BlackList.Caller);
 			if (!Try(()=>select.ExecuteScalar()).Succeeded(out id)) return Result.Fail<bool>(new Exception("Failed to query BlackList table"));
 
 			if (id!=null)
 			{
-				Log(Message.Information($"Source URI {BlackList.SourceURI} in IP Group {BlackList.IPGroup} is already black listed, updating end time"));
+				Log(Message.Information($"Caller {BlackList.Caller} in IP Group {BlackList.IPGroup} is already black listed, updating end time"));
 				command = "update BlackList set BlackListEndTime=@BlackListEndTime where ID=@ID";
 				update = new SqliteCommand(command, connection);
 				update.Parameters.AddWithValue("@BlackListEndTime", BlackList.BlackListEndTime);
@@ -118,11 +123,11 @@ namespace AC_Shield.Core
 			}
 			else
 			{
-				Log(Message.Information($"Inserting Source URI {BlackList.SourceURI}/IP Group {BlackList.IPGroup} in black list"));
-				command = "INSERT INTO BlackList (IPGroup , SourceURI, BlackListStartTime, BlackListEndTime) VALUES (@IPGroup, @SourceURI , @BlackListStartTime, @BlackListEndTime)";
+				Log(Message.Information($"Inserting caller {BlackList.Caller}/IP Group {BlackList.IPGroup} in black list"));
+				command = "INSERT INTO BlackList (IPGroup , Caller, BlackListStartTime, BlackListEndTime) VALUES (@IPGroup, @Caller , @BlackListStartTime, @BlackListEndTime)";
 				insert = new SqliteCommand(command, connection);
 				insert.Parameters.AddWithValue("@IPGroup", BlackList.IPGroup);
-				insert.Parameters.AddWithValue("@SourceURI", BlackList.SourceURI);
+				insert.Parameters.AddWithValue("@Caller", BlackList.Caller);
 				insert.Parameters.AddWithValue("@BlackListStartTime", BlackList.BlackListStartTime);
 				insert.Parameters.AddWithValue("@BlackListEndTime", BlackList.BlackListEndTime);
 				return Try(() => insert.ExecuteNonQuery()).Select(success => true);
@@ -148,7 +153,7 @@ namespace AC_Shield.Core
 			{
 				BlackListItem item = new BlackListItem();
 				item.IPGroup = Reader.GetString(0);
-				item.SourceURI = Reader.GetString(1);
+				item.Caller = Reader.GetString(1);
 				item.BlackListStartTime = Reader.GetDateTime(2);
 				item.BlackListEndTime = Reader.GetDateTime(3);
 				items.Add(item);
@@ -158,7 +163,7 @@ namespace AC_Shield.Core
 
 		public IResult<BlackListItem[]> GetBlackList(DateTime StartDate)
 		{
-			string command = "SELECT IPGroup, SourceURI,BlackListStartTime,BlackListEndTime FROM BlackList where BlackListEndTime>@StartDate";
+			string command = "SELECT IPGroup, Caller,BlackListStartTime,BlackListEndTime FROM BlackList where BlackListEndTime>@StartDate";
 			SqliteCommand select = new SqliteCommand(command, connection);
 			select.Parameters.AddWithValue("@StartDate", StartDate);
 
@@ -175,7 +180,7 @@ namespace AC_Shield.Core
 				CallerReport report = new CallerReport();
 				report.Count = Reader.GetInt32(0);
 				report.IPGroup= Reader.GetString(1);
-				report.SourceURI = Reader.GetString(2);
+				report.Caller = Reader.GetString(2);
 				reports.Add(report);
 			}
 			return Result.Success(reports.ToArray());
@@ -183,7 +188,7 @@ namespace AC_Shield.Core
 
 		public IResult<CallerReport[]> GetCallerReports(DateTime StartDate)
 		{
-			string command = "SELECT COUNT(SourceURI), IPGroup, SourceURI FROM CDR where TimeStamp>=@StartDate GROUP BY SourceURI,IPGroup";
+			string command = "SELECT COUNT(Caller), IPGroup, Caller FROM CDR where TimeStamp>=@StartDate GROUP BY Caller,IPGroup";
 			SqliteCommand select = new SqliteCommand(command, connection);
 			select.Parameters.AddWithValue("@StartDate", StartDate);
 

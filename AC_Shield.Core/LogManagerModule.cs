@@ -1,0 +1,42 @@
+﻿using LogLib;
+using ModuleLib;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+
+namespace AC_Shield.Core
+{
+	public class LogManagerModule:ThreadModule
+	{
+		private int logRotationIntervalSeconds;
+		
+
+		public LogManagerModule(ILogger Logger, int LogRotationIntervalSeconds) : base(Logger, ThreadPriority.Normal, 5000)
+		{
+			this.logRotationIntervalSeconds = LogRotationIntervalSeconds;
+		}
+		
+
+		protected override void ThreadLoop()
+		{
+
+			Log(Message.Information("Waiting for data or quit signal"));
+			while (State == ModuleStates.Started)
+			{
+				this.WaitHandles(logRotationIntervalSeconds * 1000, QuitEvent);
+
+				Try(()=> Logger.Rotate()).Match(
+					success => Log(Message.Information($"Log rotated collected succesfully")),
+					failure => Log(Message.Error($"Failed to rotate log file: {failure.Message}"))
+				);
+
+
+			}
+
+		}
+	}
+}

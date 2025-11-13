@@ -12,7 +12,6 @@ namespace AC_Shield.Core
 {
 	public class DialPlanGeneratorModule:ThreadModule
 	{
-		private Regex prefixRegex = new Regex(@"(?<Prefix>[^@]+).*");
 		private DatabaseModule databaseModule;
 		private int dialPlanGenerateIntervalSeconds;
 		private string dialPlanName ;
@@ -30,8 +29,6 @@ namespace AC_Shield.Core
 		private void CreateCSV(BlackListItem[] Items)
 		{
 			string dialPlanFileName;
-			string prefix;
-			Match match;
 
 			dialPlanFileName = System.IO.Path.Combine(exportPath, $"{dialPlanName}_{DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")}.csv");
 			using(FileStream stream=new FileStream(dialPlanFileName,FileMode.Create))
@@ -40,10 +37,8 @@ namespace AC_Shield.Core
 				writer.WriteLine("DialPlanName,Name,Prefix,Tag");
 				foreach (BlackListItem item in Items)
 				{
-					match=prefixRegex.Match(item.SourceURI);
-					if (!match.Success) continue;
-					prefix=match.Groups["Prefix"].Value;
-					writer.WriteLine($"\"{dialPlanName}\",\"{prefix}\",\"{prefix}#\",\"{blackListTag}\"");
+					
+					writer.WriteLine($"\"{dialPlanName}\",\"{item.Caller}\",\"{item.Caller}#\",\"{blackListTag}\"");
 				}
 				writer.Flush();
 			}
@@ -57,6 +52,7 @@ namespace AC_Shield.Core
 			while (State == ModuleStates.Started)
 			{
 				this.WaitHandles(dialPlanGenerateIntervalSeconds * 1000, QuitEvent);
+				if (State!=ModuleStates.Started) break;
 
 				if (!databaseModule.GetBlackList(DateTime.Now).Match(
 					success => Log(Message.Information($"Black list collected succesfully")),

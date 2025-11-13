@@ -14,7 +14,7 @@ namespace AC_Shield.Core
 			set;
 		}
 		
-		public string SourceURI
+		public string Caller
 		{
 			get;
 			set;
@@ -32,10 +32,10 @@ namespace AC_Shield.Core
 			set;
 		}
 
-		public BlackListItem(string IPGroup, string SourceURI, DateTime BlackListStartTime, DateTime BlackListEndTime)
+		public BlackListItem(string IPGroup, string Caller, DateTime BlackListStartTime, DateTime BlackListEndTime)
 		{
 			this.IPGroup = IPGroup;
-			this.SourceURI = SourceURI;
+			this.Caller = Caller;
 			this.BlackListStartTime = BlackListStartTime;
 			this.BlackListEndTime = BlackListEndTime;
 		}

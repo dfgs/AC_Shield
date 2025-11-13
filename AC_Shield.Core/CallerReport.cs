@@ -19,15 +19,15 @@ namespace AC_Shield.Core
 			get;
 			set;
 		}
-		public string SourceURI
+		public string Caller
 		{
 			get;
 			set;
 		}
 
-		public CallerReport(int Count,string IPGroup, string SourceURI)
+		public CallerReport(int Count,string IPGroup, string Caller)
 		{
-			this.Count= Count;this.IPGroup = IPGroup; this.SourceURI = SourceURI;
+			this.Count= Count;this.IPGroup = IPGroup; this.Caller = Caller;
 
 		}
 
