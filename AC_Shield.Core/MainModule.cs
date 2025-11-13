@@ -14,6 +14,7 @@ namespace AC_Shield.Core
 	{
 		private DatabaseModule? databaseModule;
 		private CDRReceiverModule? cdrReceiverModule;
+		private RESTModule? restModule;
 		private RuleCheckerModule? ruleCheckerModule;
 		private DialPlanGeneratorModule? dialPlanGeneratorModule;
 		private LogManagerModule? logManagerModule;
@@ -21,7 +22,8 @@ namespace AC_Shield.Core
 
 		public MainModule(ILogger Logger) : base(Logger,ThreadPriority.Normal,5000)
 		{
-			int port;
+			int cdrPort;
+			int restPort;
 			string ipGroup;
 			int rulesCheckIntervalSeconds;
 			int cdrHistoryPeriodSeconds;
@@ -42,7 +44,7 @@ namespace AC_Shield.Core
 			
 			try
 			{
-				port = int.Parse(ConfigurationManager.AppSettings["Port"] ?? "514");
+				cdrPort = int.Parse(ConfigurationManager.AppSettings["CDRPort"] ?? "514");
 				ipGroup = ConfigurationManager.AppSettings["IPGroup"] ?? "LAN";
 				rulesCheckIntervalSeconds = int.Parse(ConfigurationManager.AppSettings["RulesCheckIntervalSeconds"] ?? "60");
 				dBCleanIntervalSeconds = int.Parse(ConfigurationManager.AppSettings["DBCleanIntervalSeconds"] ?? "1800");
@@ -60,6 +62,7 @@ namespace AC_Shield.Core
 				reportFrom = ConfigurationManager.AppSettings["ReportFrom"] ?? "AC_Shield@gmail.com";
 				reportTo = ConfigurationManager.AppSettings["ReportTo"] ?? "report@gmail.com";
 				reportSubject= ConfigurationManager.AppSettings["ReportSubject"] ?? "AC_Shield report";
+				restPort= int.Parse(ConfigurationManager.AppSettings["RESTPort"] ?? "8080");
 			}
 			catch (Exception ex)
 			{
@@ -70,7 +73,8 @@ namespace AC_Shield.Core
 			string path = Path.Combine(@"C:\ProgramData", "AC_Shield");
 
 			databaseModule = new DatabaseModule(Logger, path, "AC_Shield.db", dBCleanIntervalSeconds, cdrRetentionSeconds, blackListRetentionSeconds);
-			cdrReceiverModule = new CDRReceiverModule(Logger, databaseModule, port, ipGroup);
+			cdrReceiverModule = new CDRReceiverModule(Logger, databaseModule, cdrPort, ipGroup);
+			restModule=new RESTModule(Logger,databaseModule,restPort);
 			ruleCheckerModule = new RuleCheckerModule(Logger, databaseModule, rulesCheckIntervalSeconds, cdrHistoryPeriodSeconds, maxCallsThreshold, blackListDurationSeconds);
 			dialPlanGeneratorModule=new DialPlanGeneratorModule(Logger,databaseModule,dialPlanGenerateIntervalSeconds,path,dialPlanName,blackListTag);
 			reportGeneratorModule= new ReportGeneratorModule(Logger,databaseModule, reportGenerationTime,smtpServer,reportFrom,reportTo,reportSubject);
@@ -89,6 +93,7 @@ namespace AC_Shield.Core
 				this.WaitHandles(1000, QuitEvent);
 			}
 			cdrReceiverModule?.Start();
+			restModule?.Start();
 			ruleCheckerModule?.Start();
 			dialPlanGeneratorModule?.Start();
 			reportGeneratorModule?.Start();
@@ -104,6 +109,7 @@ namespace AC_Shield.Core
 			reportGeneratorModule?.Stop();
 			dialPlanGeneratorModule?.Stop();
 			ruleCheckerModule?.Stop();
+			restModule?.Stop();
 			cdrReceiverModule?.Stop();
 			databaseModule?.Stop();
 

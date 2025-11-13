@@ -137,6 +137,8 @@ namespace AC_Shield.Core
 
 		}
 
+		
+
 		private IResult<bool> PurgeBlackList(DateTime BeforeDateTime)
 		{
 			string command = "DELETE FROM BlackList WHERE BlackListEndTime<=@BlackListEndTime";
@@ -146,9 +148,13 @@ namespace AC_Shield.Core
 			return Try(() => delete.ExecuteNonQuery()).Select(success => true);
 		}
 
-		private IResult<BlackListItem[]> ReadBlackListItems(SqliteDataReader Reader)
+	
+
+
+		private BlackListItem[] ReadBlackListItems(SqliteDataReader Reader)
 		{
 			List<BlackListItem> items = new List<BlackListItem>();
+			
 			while (Reader.Read())
 			{
 				BlackListItem item = new BlackListItem();
@@ -158,7 +164,7 @@ namespace AC_Shield.Core
 				item.BlackListEndTime = Reader.GetDateTime(3);
 				items.Add(item);
 			}
-			return Result.Success(items.ToArray());
+			return items.ToArray();
 		}
 
 		public IResult<BlackListItem[]> GetBlackList(DateTime StartDate)
@@ -167,10 +173,18 @@ namespace AC_Shield.Core
 			SqliteCommand select = new SqliteCommand(command, connection);
 			select.Parameters.AddWithValue("@StartDate", StartDate);
 
-			return Try(() => select.ExecuteReader()).SelectResult(reader => ReadBlackListItems(reader), failure => failure);
+			return Try(() => select.ExecuteReader()).SelectResult(reader => Try(()=>ReadBlackListItems(reader)), failure => failure);
 		}
 
+		public IResult<BlackListItem[]> GetBlackList(DateTime StartDate, string Caller)
+		{
+			string command = "SELECT IPGroup, Caller,BlackListStartTime,BlackListEndTime FROM BlackList where BlackListEndTime>@StartDate and Caller=@Caller";
+			SqliteCommand select = new SqliteCommand(command, connection);
+			select.Parameters.AddWithValue("@StartDate", StartDate);
+			select.Parameters.AddWithValue("@Caller", Caller);
 
+			return Try(() => select.ExecuteReader()).SelectResult(reader => Try(() => ReadBlackListItems(reader)), failure => failure);
+		}
 
 		private IResult<CallerReport[]> ReadCallerReports(SqliteDataReader Reader)
 		{
