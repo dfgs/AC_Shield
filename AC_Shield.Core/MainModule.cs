@@ -38,6 +38,8 @@ namespace AC_Shield.Core
 			int logRotationIntervalSeconds;
 			TimeOnly reportGenerationTime;
 			string smtpServer;
+			string smtpLogin;
+			string smtpPassword;
 			string reportFrom;
 			string reportTo;
 			string reportSubject;
@@ -58,7 +60,9 @@ namespace AC_Shield.Core
 				blackListTag= ConfigurationManager.AppSettings["BlackListTag"] ?? "BlackList";
 				logRotationIntervalSeconds = int.Parse(ConfigurationManager.AppSettings["LogRotationIntervalSeconds"] ?? "3600");
 				reportGenerationTime= TimeOnly.Parse(ConfigurationManager.AppSettings["ReportGenerationTime"] ?? "00:00");
-				smtpServer= ConfigurationManager.AppSettings["SmtpServer"] ?? "smtp.gmail.com";
+				smtpServer= ConfigurationManager.AppSettings["SMTPServer"] ?? "smtp.gmail.com";
+				smtpLogin = ConfigurationManager.AppSettings["SMTPLogin"] ?? "";
+				smtpPassword=	 ConfigurationManager.AppSettings["SMTPPassword"] ?? "";
 				reportFrom = ConfigurationManager.AppSettings["ReportFrom"] ?? "AC_Shield@gmail.com";
 				reportTo = ConfigurationManager.AppSettings["ReportTo"] ?? "report@gmail.com";
 				reportSubject= ConfigurationManager.AppSettings["ReportSubject"] ?? "AC_Shield report";
@@ -77,7 +81,7 @@ namespace AC_Shield.Core
 			restModule=new RESTModule(Logger,databaseModule,restPort);
 			ruleCheckerModule = new RuleCheckerModule(Logger, databaseModule, rulesCheckIntervalSeconds, cdrHistoryPeriodSeconds, maxCallsThreshold, blackListDurationSeconds);
 			dialPlanGeneratorModule=new DialPlanGeneratorModule(Logger,databaseModule,dialPlanGenerateIntervalSeconds,path,dialPlanName,blackListTag);
-			reportGeneratorModule= new ReportGeneratorModule(Logger,databaseModule, reportGenerationTime,smtpServer,reportFrom,reportTo,reportSubject);
+			reportGeneratorModule= new ReportGeneratorModule(Logger,databaseModule, reportGenerationTime,smtpServer,smtpLogin,smtpPassword, reportFrom,reportTo,reportSubject);
 			logManagerModule = new LogManagerModule(Logger, logRotationIntervalSeconds);
 		}
 

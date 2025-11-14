@@ -37,4 +37,4 @@ builder.Services.AddHostedService<Worker>();
 IHost host = builder.Build();
 host.Run();
 
-// pour créer le service sc.exe create ".AC_Shield Service" binpath= "D:\Projets\AC_Shield\AC_Shield.Service\bin\Release\net8.0\win-x64\publish\win-x64\AC_Shield.Service.exe"
+// pour créer le service sc.exe create "AC_Shield Service" binpath= "D:\Projets\AC_Shield\AC_Shield.Service\bin\Release\net8.0\win-x64\publish\win-x64\AC_Shield.Service.exe"

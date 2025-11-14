@@ -20,12 +20,16 @@ namespace AC_Shield.Core
 		private string from;
 		private string to;
 		private string subject;
+		private string login;
+		private string password;
 
-		public ReportGeneratorModule(ILogger Logger, DatabaseModule DatabaseModule, TimeOnly ReportGenerationTime,string SMTPServer,string From,string To,string Subject) : base(Logger, ThreadPriority.Normal, 5000)
+		public ReportGeneratorModule(ILogger Logger, DatabaseModule DatabaseModule, TimeOnly ReportGenerationTime,string SMTPServer,string Login,string Password, string From,string To,string Subject) : base(Logger, ThreadPriority.Normal, 5000)
 		{
 			this.databaseModule = DatabaseModule;
 			this.reportGenerationTime = ReportGenerationTime;
 			this.smtpServer= SMTPServer;
+			this.login= Login;
+			this.password= Password;
 			this.from = From;
 			this.to = To;
 			this.subject= Subject;
@@ -48,6 +52,7 @@ namespace AC_Shield.Core
 		private void SendMail(BlackListItem[] BlackList)
 		{
 			SmtpClient client = new SmtpClient(smtpServer);
+			if (!string.IsNullOrEmpty(login) && !string.IsNullOrEmpty(password)) client.Credentials=new System.Net.NetworkCredential(login, password);
 			MailAddress from = new MailAddress(this.from);
 			MailAddress to = new MailAddress(this.to);
 

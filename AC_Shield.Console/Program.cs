@@ -4,6 +4,7 @@ using LogLib;
 using ModuleLib;
 using System;
 using System.Configuration;
+using System.IO;
 
 namespace AC_Shield.Console
 {
@@ -16,6 +17,8 @@ namespace AC_Shield.Console
 		{
 
 			logger = new ConsoleLogger(new DefaultLogFormatter());
+			//logger = new FileLogger(new DefaultLogFormatter(), Path.Combine(@"C:\ProgramData\AC_Shield", "AC_Shield.log"), 10);
+
 			main = new MainModule(logger);
 
 			main.Start();
