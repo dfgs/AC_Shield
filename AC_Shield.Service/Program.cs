@@ -19,7 +19,17 @@ if (!System.IO.Path.Exists(path))
 	System.IO.Directory.CreateDirectory(path);
 }
 
-MainModule mainModule = new MainModule(new FileLogger(new DefaultLogFormatter(), Path.Combine(path, "AC_Shield.log")));
+int numberOfFilesToKeep;
+try
+{
+	numberOfFilesToKeep = int.Parse(System.Configuration.ConfigurationManager.AppSettings["LogFileRetention"] ?? "10");
+}
+catch
+{
+	numberOfFilesToKeep = 10;
+}
+
+MainModule mainModule = new MainModule(new FileLogger(new DefaultLogFormatter(), Path.Combine(path, "AC_Shield.log"), numberOfFilesToKeep));
 
 builder.Services.AddSingleton<MainModule>(mainModule);
 builder.Services.AddHostedService<Worker>();

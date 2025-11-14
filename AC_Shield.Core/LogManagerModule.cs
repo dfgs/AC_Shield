@@ -28,6 +28,7 @@ namespace AC_Shield.Core
 			while (State == ModuleStates.Started)
 			{
 				this.WaitHandles(logRotationIntervalSeconds * 1000, QuitEvent);
+				Log(Message.Information("Rotating log file"));
 
 				Try(()=> Logger.Rotate()).Match(
 					success => Log(Message.Information($"Log rotated collected succesfully")),
