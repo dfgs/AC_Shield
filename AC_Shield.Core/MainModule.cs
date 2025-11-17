@@ -22,6 +22,8 @@ namespace AC_Shield.Core
 
 		public MainModule(ILogger Logger) : base(Logger,ThreadPriority.Normal,5000)
 		{
+			string logPath;
+			string databasePath;
 			int cdrPort;
 			int restPort;
 			string ipGroup;
@@ -46,6 +48,8 @@ namespace AC_Shield.Core
 			
 			try
 			{
+				logPath= ConfigurationManager.AppSettings["LogPath"] ?? @"C:\ProgramData\AC_Shield";
+				databasePath= ConfigurationManager.AppSettings["DatabasePath"] ?? @"C:\ProgramData\AC_Shield";
 				cdrPort = int.Parse(ConfigurationManager.AppSettings["CDRPort"] ?? "514");
 				ipGroup = ConfigurationManager.AppSettings["IPGroup"] ?? "LAN";
 				rulesCheckIntervalSeconds = int.Parse(ConfigurationManager.AppSettings["RulesCheckIntervalSeconds"] ?? "60");
@@ -74,13 +78,13 @@ namespace AC_Shield.Core
 				return;
 			}
 
-			string path = Path.Combine(@"C:\ProgramData", "AC_Shield");
+			
 
-			databaseModule = new DatabaseModule(Logger, path, "AC_Shield.db", dBCleanIntervalSeconds, cdrRetentionSeconds, blackListRetentionSeconds);
+			databaseModule = new DatabaseModule(Logger, databasePath, "AC_Shield.db", dBCleanIntervalSeconds, cdrRetentionSeconds, blackListRetentionSeconds);
 			cdrReceiverModule = new CDRReceiverModule(Logger, databaseModule, cdrPort, ipGroup);
-			restModule=new RESTModule(Logger,databaseModule,restPort);
+			restModule=new RESTModule(Logger,databaseModule,restPort,cdrHistoryPeriodSeconds);
 			ruleCheckerModule = new RuleCheckerModule(Logger, databaseModule, rulesCheckIntervalSeconds, cdrHistoryPeriodSeconds, maxCallsThreshold, blackListDurationSeconds);
-			dialPlanGeneratorModule=new DialPlanGeneratorModule(Logger,databaseModule,dialPlanGenerateIntervalSeconds,path,dialPlanName,blackListTag);
+			dialPlanGeneratorModule=new DialPlanGeneratorModule(Logger,databaseModule,dialPlanGenerateIntervalSeconds,databasePath,dialPlanName,blackListTag);
 			reportGeneratorModule= new ReportGeneratorModule(Logger,databaseModule, reportGenerationTime,smtpServer,smtpLogin,smtpPassword, reportFrom,reportTo,reportSubject);
 			logManagerModule = new LogManagerModule(Logger, logRotationIntervalSeconds);
 		}

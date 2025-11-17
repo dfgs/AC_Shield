@@ -8,6 +8,12 @@ namespace AC_Shield.Core
 {
 	public struct BlackListItem
 	{
+		public Guid ID
+		{
+			get;
+			set;
+		}
+
 		public string IPGroup
 		{
 			get;
@@ -32,8 +38,9 @@ namespace AC_Shield.Core
 			set;
 		}
 
-		public BlackListItem(string IPGroup, string Caller, DateTime BlackListStartTime, DateTime BlackListEndTime)
+		public BlackListItem(Guid ID, string IPGroup, string Caller, DateTime BlackListStartTime, DateTime BlackListEndTime)
 		{
+			this.ID = ID;
 			this.IPGroup = IPGroup;
 			this.Caller = Caller;
 			this.BlackListStartTime = BlackListStartTime;

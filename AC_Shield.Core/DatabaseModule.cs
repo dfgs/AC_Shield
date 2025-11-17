@@ -61,10 +61,10 @@ namespace AC_Shield.Core
 			string command;
 			SqliteCommand createCDRTable,createBlackListTable;
 
-			command = "CREATE TABLE IF NOT EXISTS CDR (ID INTEGER PRIMARY KEY AUTOINCREMENT, TimeStamp DateTime NOT NULL,IPGroup NVARCHAR(256) NOT NULL,  Caller NVARCHAR(1024) NOT NULL)";
+			command = "CREATE TABLE IF NOT EXISTS CDR (ID NCHAR(36) PRIMARY KEY, TimeStamp DateTime NOT NULL,IPGroup NVARCHAR(256) NOT NULL,  Caller NVARCHAR(1024) NOT NULL)";
 			createCDRTable = new SqliteCommand(command, connection);
 
-			command = "CREATE TABLE IF NOT EXISTS BlackList (ID INTEGER PRIMARY KEY AUTOINCREMENT, BlackListStartTime DateTime NOT NULL,BlackListEndTime DateTime NOT NULL,IPGroup NVARCHAR(256) NOT NULL, Caller NVARCHAR(1024) NOT NULL)";
+			command = "CREATE TABLE IF NOT EXISTS BlackList (ID NCHAR(36) PRIMARY KEY, BlackListStartTime DateTime NOT NULL,BlackListEndTime DateTime NOT NULL,IPGroup NVARCHAR(256) NOT NULL, Caller NVARCHAR(1024) NOT NULL)";
 			createBlackListTable = new SqliteCommand(command, connection);
 
 
@@ -75,15 +75,16 @@ namespace AC_Shield.Core
 			.Select(success => true);
 		}
 
-		public IResult<bool> InsertCDR(CDR CDR)
+		public IResult<bool> InsertCDR(AC_CDR CDR)
 		{
 			string? caller;
 
 			caller = CDR.GetCallerNumber();
 			if (caller==null) return Result.Fail<bool>(new Exception("CDR Caller number is null"));
 
-			string command = "INSERT INTO CDR (TimeStamp , IPGroup , Caller) VALUES (@TimeStamp , @IPGroup , @Caller)";
+			string command = "INSERT INTO CDR (ID, TimeStamp , IPGroup , Caller) VALUES (@ID, @TimeStamp , @IPGroup , @Caller)";
 			SqliteCommand insert = new SqliteCommand(command, connection);
+			insert.Parameters.AddWithValue("@ID", Guid.NewGuid().ToString());
 			insert.Parameters.AddWithValue("@TimeStamp", CDR.SetupTime);
 			insert.Parameters.AddWithValue("@IPGroup", CDR.IPGroup);
 			insert.Parameters.AddWithValue("@Caller", caller);
@@ -100,7 +101,7 @@ namespace AC_Shield.Core
 			return Try(() => delete.ExecuteNonQuery()).Select(success => true);
 		}
 
-		public IResult<bool> UpdateBlackList(BlackListItem BlackList)
+		public IResult<bool> UpdateBlackList(BlackListItem BlackListItem)
 		{
 			string command;
 			SqliteCommand insert, select,update;
@@ -108,28 +109,29 @@ namespace AC_Shield.Core
 
 			command = "select ID from BlackList where IPGroup=@IPGroup and Caller=@Caller";
 			select=new SqliteCommand(command, connection);
-			select.Parameters.AddWithValue("@IPGroup", BlackList.IPGroup);
-			select.Parameters.AddWithValue("@Caller", BlackList.Caller);
+			select.Parameters.AddWithValue("@IPGroup", BlackListItem.IPGroup);
+			select.Parameters.AddWithValue("@Caller", BlackListItem.Caller);
 			if (!Try(()=>select.ExecuteScalar()).Succeeded(out id)) return Result.Fail<bool>(new Exception("Failed to query BlackList table"));
 
 			if (id!=null)
 			{
-				Log(Message.Information($"Caller {BlackList.Caller} in IP Group {BlackList.IPGroup} is already black listed, updating end time"));
+				Log(Message.Information($"Caller {BlackListItem.Caller} in IP Group {BlackListItem.IPGroup} is already black listed, updating end time"));
 				command = "update BlackList set BlackListEndTime=@BlackListEndTime where ID=@ID";
 				update = new SqliteCommand(command, connection);
-				update.Parameters.AddWithValue("@BlackListEndTime", BlackList.BlackListEndTime);
+				update.Parameters.AddWithValue("@BlackListEndTime", BlackListItem.BlackListEndTime);
 				update.Parameters.AddWithValue("@ID", id);
 				return Try(() => update.ExecuteNonQuery()).Select(success => true);
 			}
 			else
 			{
-				Log(Message.Information($"Inserting caller {BlackList.Caller}/IP Group {BlackList.IPGroup} in black list"));
-				command = "INSERT INTO BlackList (IPGroup , Caller, BlackListStartTime, BlackListEndTime) VALUES (@IPGroup, @Caller , @BlackListStartTime, @BlackListEndTime)";
+				Log(Message.Information($"Inserting caller {BlackListItem.Caller}/IP Group {BlackListItem.IPGroup} in black list"));
+				command = "INSERT INTO BlackList (ID, IPGroup , Caller, BlackListStartTime, BlackListEndTime) VALUES (@ID, @IPGroup, @Caller , @BlackListStartTime, @BlackListEndTime)";
 				insert = new SqliteCommand(command, connection);
-				insert.Parameters.AddWithValue("@IPGroup", BlackList.IPGroup);
-				insert.Parameters.AddWithValue("@Caller", BlackList.Caller);
-				insert.Parameters.AddWithValue("@BlackListStartTime", BlackList.BlackListStartTime);
-				insert.Parameters.AddWithValue("@BlackListEndTime", BlackList.BlackListEndTime);
+				insert.Parameters.AddWithValue("@ID", BlackListItem.ID);
+				insert.Parameters.AddWithValue("@IPGroup", BlackListItem.IPGroup);
+				insert.Parameters.AddWithValue("@Caller", BlackListItem.Caller);
+				insert.Parameters.AddWithValue("@BlackListStartTime", BlackListItem.BlackListStartTime);
+				insert.Parameters.AddWithValue("@BlackListEndTime", BlackListItem.BlackListEndTime);
 				return Try(() => insert.ExecuteNonQuery()).Select(success => true);
 
 			}
@@ -138,6 +140,7 @@ namespace AC_Shield.Core
 		}
 
 		
+
 
 		private IResult<bool> PurgeBlackList(DateTime BeforeDateTime)
 		{
@@ -158,10 +161,11 @@ namespace AC_Shield.Core
 			while (Reader.Read())
 			{
 				BlackListItem item = new BlackListItem();
-				item.IPGroup = Reader.GetString(0);
-				item.Caller = Reader.GetString(1);
-				item.BlackListStartTime = Reader.GetDateTime(2);
-				item.BlackListEndTime = Reader.GetDateTime(3);
+				item.ID = Reader.GetGuid(0);
+				item.IPGroup = Reader.GetString(1);
+				item.Caller = Reader.GetString(2);
+				item.BlackListStartTime = Reader.GetDateTime(3);
+				item.BlackListEndTime = Reader.GetDateTime(4);
 				items.Add(item);
 			}
 			return items.ToArray();
@@ -169,7 +173,7 @@ namespace AC_Shield.Core
 
 		public IResult<BlackListItem[]> GetBlackList(DateTime StartDate)
 		{
-			string command = "SELECT IPGroup, Caller,BlackListStartTime,BlackListEndTime FROM BlackList where BlackListEndTime>@StartDate";
+			string command = "SELECT ID,IPGroup, Caller,BlackListStartTime,BlackListEndTime FROM BlackList where BlackListEndTime>@StartDate";
 			SqliteCommand select = new SqliteCommand(command, connection);
 			select.Parameters.AddWithValue("@StartDate", StartDate);
 
@@ -178,7 +182,7 @@ namespace AC_Shield.Core
 
 		public IResult<BlackListItem[]> GetBlackList(DateTime StartDate, string Caller)
 		{
-			string command = "SELECT IPGroup, Caller,BlackListStartTime,BlackListEndTime FROM BlackList where BlackListEndTime>@StartDate and Caller=@Caller";
+			string command = "SELECT ID,IPGroup, Caller,BlackListStartTime,BlackListEndTime FROM BlackList where BlackListEndTime>@StartDate and Caller=@Caller";
 			SqliteCommand select = new SqliteCommand(command, connection);
 			select.Parameters.AddWithValue("@StartDate", StartDate);
 			select.Parameters.AddWithValue("@Caller", Caller);
@@ -209,8 +213,43 @@ namespace AC_Shield.Core
 			return Try(() => select.ExecuteReader()).SelectResult(reader => ReadCallerReports(reader),failure=>failure);
 		}
 
+		
 
+		private IResult<CDR[]> ReadCDRs(SqliteDataReader Reader)
+		{
+			List<CDR> cdrs= new List<CDR>();
+			while (Reader.Read())
+			{
+				CDR cdr = new CDR();
+				cdr.ID=Reader.GetGuid(0);
+				cdr.TimeStamp= Reader.GetDateTime(1);
+				cdr.IPGroup= Reader.GetString(2);
+				cdr.Caller= Reader.GetString(3);
+				cdrs.Add(cdr);
+			}
+			return Result.Success(cdrs.ToArray());
+		}
 
+		public IResult<CDR[]> GetFirstCDR(int Count)
+		{
+			string command;
+			SqliteCommand select;
+
+			command = "select ID, TimeStamp , IPGroup , Caller FROM CDR ORDER BY TimeStamp ASC LIMIT @Count";
+			select = new SqliteCommand(command, connection);
+			select.Parameters.AddWithValue("@Count", Count);
+			return Try(() => select.ExecuteReader()).SelectResult(reader => ReadCDRs(reader), failure => failure);
+		}
+		public IResult<CDR[]> GetLastCDR(int Count)
+		{
+			string command;
+			SqliteCommand select;
+
+			command = "select ID, TimeStamp , IPGroup , Caller FROM CDR ORDER BY TimeStamp DESC LIMIT @Count";
+			select = new SqliteCommand(command, connection);
+			select.Parameters.AddWithValue("@Count", Count);
+			return Try(() => select.ExecuteReader()).SelectResult(reader => ReadCDRs(reader), failure => failure);
+		}
 
 
 		protected override void ThreadLoop()
@@ -260,5 +299,6 @@ namespace AC_Shield.Core
 			}
 		}
 
+		
 	}
 }

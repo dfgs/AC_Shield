@@ -44,20 +44,20 @@ namespace AC_Shield.Core
 			return base.OnStopping();
 		}
 
-		private IResult<CDR> ParseCDR(string Line)
+		private IResult<AC_CDR> ParseCDR(string Line)
 		{
 			string[] parts;
-			CDR cdr;
+			AC_CDR cdr;
 
-			if (Line == null) return Result.Fail<CDR>(new ArgumentNullException(nameof(Line)));
+			if (Line == null) return Result.Fail<AC_CDR>(new ArgumentNullException(nameof(Line)));
 
 		
 			parts = Line.Split('|');
-			if ((parts.Length < 38) || (parts.Length > 39)) return Result.Fail<CDR>(new InvalidDataException("Invalid SBC report format, please check SBC configuration"));
+			if ((parts.Length < 38) || (parts.Length > 39)) return Result.Fail<AC_CDR>(new InvalidDataException("Invalid SBC report format, please check SBC configuration"));
 
 			return Try(() =>
 			{
-				cdr = new CDR();
+				cdr = new AC_CDR();
 				cdr.SBCReportType = parts[0].Trim();
 				cdr.EPTyp = parts[1].Trim();
 				cdr.SIPCallId = parts[2].Trim();
@@ -109,7 +109,7 @@ namespace AC_Shield.Core
 			byte[] bytes;
 			string syslog;
 			Match match;
-			CDR? cdr=null;
+			AC_CDR? cdr=null;
 
 			Try(()=>new UdpClient(port)).Match(
 				

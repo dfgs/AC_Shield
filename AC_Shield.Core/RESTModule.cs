@@ -23,16 +23,18 @@ namespace AC_Shield.Core
 {
 	public class RESTModule : ThreadModule
 	{
+		private int cdrRHistoryPeriodSeconds;
 		private DatabaseModule databaseModule;
 		private int port;
 
-		public RESTModule(LogLib.ILogger Logger, DatabaseModule DatabaseModule, int Port) : base(Logger, ThreadPriority.Normal, 5000)
+		public RESTModule(LogLib.ILogger Logger, DatabaseModule DatabaseModule, int Port,int CDRHistoryPeriodSeconds) : base(Logger, ThreadPriority.Normal, 5000)
 		{
 			this.databaseModule = DatabaseModule;
 			this.port = Port;
+			this.cdrRHistoryPeriodSeconds = CDRHistoryPeriodSeconds;
 		}
 
-		private string GetStatus(string Caller)
+		private string GetCallerPermission(string Caller)
 		{
 			BlackListItem[] items;
 
@@ -41,7 +43,34 @@ namespace AC_Shield.Core
 			else return "Allow";
 
 		}
-		
+
+		private CDR[] GetFirstCDRs(int Count)
+		{
+			CDR[] items;
+
+			if (!databaseModule.GetFirstCDR(Count).Succeeded(out items)) return new CDR[] { };
+
+			return items;
+
+		}
+		private CDR[] GetLastCDRs(int Count)
+		{
+			CDR[] items;
+
+			if (!databaseModule.GetLastCDR(Count).Succeeded(out items)) return new CDR[] { };
+
+			return items;
+
+		}
+		private CallerReport[] GetCallerReports()
+		{
+			CallerReport[] items;
+
+			if (!databaseModule.GetCallerReports(DateTime.Now.AddSeconds(-cdrRHistoryPeriodSeconds)).Succeeded(out items)) return new CallerReport[] { };
+
+			return items;
+
+		}
 		protected override void ThreadLoop()
 		{
 
@@ -58,7 +87,10 @@ namespace AC_Shield.Core
 				app.Urls.Add($"http://0.0.0.0:{port}");
 
 
-				app.MapGet("/GetCallerStatus/{Caller}", (string caller) => GetStatus(caller));
+				app.MapGet("/CallerPermission/{Caller}", (string caller) => GetCallerPermission(caller));
+				app.MapGet("/CDR/First/{Count}", (int count) => GetFirstCDRs(count));
+				app.MapGet("/CDR/Last/{Count}", (int count) => GetLastCDRs(count));
+				app.MapGet("/CallerReport", () => GetCallerReports());
 
 				app.RunAsync();
 

@@ -13,10 +13,11 @@ builder.Services.AddWindowsService(options =>
 
 LoggerProviderOptions.RegisterProviderOptions<EventLogSettings, EventLogLoggerProvider>(builder.Services);
 
-string path = Path.Combine(@"C:\ProgramData", "AC_Shield");
-if (!System.IO.Path.Exists(path))
+string logPath = System.Configuration.ConfigurationManager.AppSettings["LogPath"] ?? @"C:\ProgramData\AC_Shield";
+
+if (!System.IO.Path.Exists(logPath))
 {
-	System.IO.Directory.CreateDirectory(path);
+	System.IO.Directory.CreateDirectory(logPath);
 }
 
 int numberOfFilesToKeep;
@@ -29,7 +30,7 @@ catch
 	numberOfFilesToKeep = 10;
 }
 
-MainModule mainModule = new MainModule(new FileLogger(new DefaultLogFormatter(), Path.Combine(path, "AC_Shield.log"), numberOfFilesToKeep));
+MainModule mainModule = new MainModule(new FileLogger(new DefaultLogFormatter(), Path.Combine(logPath, "AC_Shield.log"), numberOfFilesToKeep));
 
 builder.Services.AddSingleton<MainModule>(mainModule);
 builder.Services.AddHostedService<Worker>();
