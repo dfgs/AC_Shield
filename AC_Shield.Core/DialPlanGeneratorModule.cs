@@ -46,12 +46,16 @@ namespace AC_Shield.Core
 
 		protected override void ThreadLoop()
 		{
+			int duration;
+
 			BlackListItem[] blackList;
 
 			Log(Message.Information("Waiting for data or quit signal"));
 			while (State == ModuleStates.Started)
 			{
-				this.WaitHandles(dialPlanGenerateIntervalSeconds * 1000, QuitEvent);
+				if (dialPlanGenerateIntervalSeconds==-1) duration=-1;
+				else duration=dialPlanGenerateIntervalSeconds * 1000;
+				this.WaitHandles(duration, QuitEvent);
 				if (State!=ModuleStates.Started) break;
 
 				if (!databaseModule.GetBlackList(DateTime.Now).Match(

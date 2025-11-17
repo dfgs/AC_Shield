@@ -43,8 +43,11 @@ namespace AC_Shield.Core
 			nextEventTime=new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, reportGenerationTime.Hour, reportGenerationTime.Minute, reportGenerationTime.Second);	
 			if (nextEventTime<=DateTime.Now) nextEventTime=nextEventTime.AddDays(1);
 
-			Log(Message.Information($"Enqueue first event at {nextEventTime}"));
-			Add(nextEventTime, nextEventTime);
+			if (!string.IsNullOrEmpty(smtpServer))
+			{
+				Log(Message.Information($"Enqueue first event at {nextEventTime}"));
+				Add(nextEventTime, nextEventTime);
+			}
 
 			return base.OnStarting();
 		}
