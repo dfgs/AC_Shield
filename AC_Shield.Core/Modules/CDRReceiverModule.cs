@@ -10,11 +10,12 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace AC_Shield.Core
+namespace AC_Shield.Core.Modules
 {
+	// This module is responsible for receiving CDR from SBC and insert them in database
 	public class CDRReceiverModule:ThreadModule
 	{
-		private DatabaseModule databaseModule;
+		private IDatabaseModule databaseModule;
 		
 		private int port;
 		private UdpClient? listener = null;
@@ -24,11 +25,11 @@ namespace AC_Shield.Core
 		private static Regex CDRRegex = new Regex(@"[^]]+] +\|(?<CDR>(CALL_START).*)");
 		private DateTimeParser dateTimeParser;
 
-		public CDRReceiverModule(ILogger Logger,DatabaseModule DatabaseModule, int Port,string IPGroup) : base(Logger, ThreadPriority.Normal, 5000)
+		public CDRReceiverModule(ILogger Logger,IDatabaseModule DatabaseModule, int Port,string IPGroup) : base(Logger, ThreadPriority.Normal, 5000)
 		{
-			this.databaseModule = DatabaseModule;
-			this.port=Port;
-			this.ipGroup=IPGroup;
+			databaseModule = DatabaseModule;
+			port=Port;
+			ipGroup=IPGroup;
 			dateTimeParser = new DateTimeParser();
 		}
 
@@ -53,7 +54,7 @@ namespace AC_Shield.Core
 
 		
 			parts = Line.Split('|');
-			if ((parts.Length < 38) || (parts.Length > 39)) return Result.Fail<AC_CDR>(new InvalidDataException("Invalid SBC report format, please check SBC configuration"));
+			if (parts.Length < 38 || parts.Length > 39) return Result.Fail<AC_CDR>(new InvalidDataException("Invalid SBC report format, please check SBC configuration"));
 
 			return Try(() =>
 			{

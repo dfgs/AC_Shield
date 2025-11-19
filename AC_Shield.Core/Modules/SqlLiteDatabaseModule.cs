@@ -4,9 +4,9 @@ using ModuleLib;
 using ResultTypeLib;
 using System.Collections.Generic;
 
-namespace AC_Shield.Core
+namespace AC_Shield.Core.Modules
 {
-	public class DatabaseModule : ThreadModule
+	public class SqlLiteDatabaseModule : ThreadModule,IDatabaseModule
 	{
 		private string databasePath;
 		private string databaseName;
@@ -15,14 +15,14 @@ namespace AC_Shield.Core
 		private int cdrRetentionSeconds;
 		private int blackListRetentionSeconds;
 
-		public DatabaseModule(ILogger Logger, string DatabasePath,string DatabaseName,int DBCleanIntervalSeconds, int CDRRetentionSeconds, int BlackListRetentionSeconds) : base(Logger, ThreadPriority.Normal,5000)
+		public SqlLiteDatabaseModule(ILogger Logger, string DatabasePath,string DatabaseName,int DBCleanIntervalSeconds, int CDRRetentionSeconds, int BlackListRetentionSeconds) : base(Logger, ThreadPriority.Normal,5000)
 		{
-			this.databasePath = DatabasePath;
-			this.databaseName = DatabaseName;
-			this.dbCleanIntervalSeconds = DBCleanIntervalSeconds;
-			this.cdrRetentionSeconds = CDRRetentionSeconds;
-			this.blackListRetentionSeconds = BlackListRetentionSeconds;
-			this.connection = null;
+			databasePath = DatabasePath;
+			databaseName = DatabaseName;
+			dbCleanIntervalSeconds = DBCleanIntervalSeconds;
+			cdrRetentionSeconds = CDRRetentionSeconds;
+			blackListRetentionSeconds = BlackListRetentionSeconds;
+			connection = null;
 		}
 
 		private IResult<bool> CreateDatabaseFile()
@@ -30,7 +30,7 @@ namespace AC_Shield.Core
 			string databaseFileName;
 			IResult<bool> result;
 
-			databaseFileName = System.IO.Path.Combine(databasePath, databaseName);
+			databaseFileName = Path.Combine(databasePath, databaseName);
 
 			/*if (System.IO.File.Exists(databaseFileName))
 			{
@@ -39,17 +39,17 @@ namespace AC_Shield.Core
 				if (!result.Succeeded()) return result;
 			}//*/					
 
-			if (!System.IO.Directory.Exists(databasePath))
+			if (!Directory.Exists(databasePath))
 			{
 				Log(Message.Information($"Database folder not found at {databasePath}, creating one"));
-				result = Try(() => System.IO.Directory.CreateDirectory(databasePath)).Select(success => true);
+				result = Try(() => Directory.CreateDirectory(databasePath)).Select(success => true);
 				if (!result.Succeeded()) return result;
 			}
 
-			if (!System.IO.File.Exists(databaseFileName))
+			if (!File.Exists(databaseFileName))
 			{
 				Log(Message.Information($"Create new database file at {databaseFileName}"));
-				result = Try(() => System.IO.File.Create(databaseFileName).Close()).Select(success => true);
+				result = Try(() => File.Create(databaseFileName).Close()).Select(success => true);
 				return result;
 			}
 			
@@ -256,7 +256,7 @@ namespace AC_Shield.Core
 		{
 			string databaseFileName;
 
-			databaseFileName = System.IO.Path.Combine(databasePath, "AC_Shield.db");
+			databaseFileName = Path.Combine(databasePath, "AC_Shield.db");
 
 			if (!CreateDatabaseFile().Match(
 				success => Log(Message.Information($"Database file initialized succesfully")),
@@ -282,7 +282,7 @@ namespace AC_Shield.Core
 
 			while (State == ModuleStates.Started)
 			{
-				this.WaitHandles(dbCleanIntervalSeconds*1000, QuitEvent);
+				WaitHandles(dbCleanIntervalSeconds*1000, QuitEvent);
 				if (State != ModuleStates.Started) break;
 				
 				Log(Message.Information("Cleaning old data from database"));

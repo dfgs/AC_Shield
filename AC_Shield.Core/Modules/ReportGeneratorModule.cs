@@ -10,11 +10,12 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace AC_Shield.Core
+namespace AC_Shield.Core.Modules
 {
+	// This module is responsible for generating and sending reports by email
 	public class ReportGeneratorModule : AtModule<DateTime>
 	{
-		private DatabaseModule databaseModule;
+		private IDatabaseModule databaseModule;
 		private TimeOnly reportGenerationTime;
 		private string smtpServer;
 		private string from;
@@ -23,16 +24,16 @@ namespace AC_Shield.Core
 		private string login;
 		private string password;
 
-		public ReportGeneratorModule(ILogger Logger, DatabaseModule DatabaseModule, TimeOnly ReportGenerationTime,string SMTPServer,string Login,string Password, string From,string To,string Subject) : base(Logger, ThreadPriority.Normal, 5000)
+		public ReportGeneratorModule(ILogger Logger, IDatabaseModule DatabaseModule, TimeOnly ReportGenerationTime,string SMTPServer,string Login,string Password, string From,string To,string Subject) : base(Logger, ThreadPriority.Normal, 5000)
 		{
-			this.databaseModule = DatabaseModule;
-			this.reportGenerationTime = ReportGenerationTime;
-			this.smtpServer= SMTPServer;
-			this.login= Login;
-			this.password= Password;
-			this.from = From;
-			this.to = To;
-			this.subject= Subject;
+			databaseModule = DatabaseModule;
+			reportGenerationTime = ReportGenerationTime;
+			smtpServer= SMTPServer;
+			login= Login;
+			password= Password;
+			from = From;
+			to = To;
+			subject= Subject;
 
 		}
 
@@ -73,9 +74,9 @@ namespace AC_Shield.Core
 				""";
 			
 			
-			message.BodyEncoding = System.Text.Encoding.UTF8;
-			message.Subject = this.subject;
-			message.SubjectEncoding = System.Text.Encoding.UTF8;
+			message.BodyEncoding = Encoding.UTF8;
+			message.Subject = subject;
+			message.SubjectEncoding = Encoding.UTF8;
 			
 			client.Send(message);
 		}

@@ -8,11 +8,12 @@ using ModuleLib;
 using System.Configuration;
 using ResultTypeLib;
 
-namespace AC_Shield.Core
+namespace AC_Shield.Core.Modules
 {
+	// this is main module, responsible for starting/stopping all other modules
 	public class MainModule : ThreadModule
 	{
-		private DatabaseModule? databaseModule;
+		private IDatabaseModule? databaseModule;
 		private CDRReceiverModule? cdrReceiverModule;
 		private RESTModule? restModule;
 		private RuleCheckerModule? ruleCheckerModule;
@@ -80,7 +81,7 @@ namespace AC_Shield.Core
 
 			
 
-			databaseModule = new DatabaseModule(Logger, databasePath, "AC_Shield.db", dBCleanIntervalSeconds, cdrRetentionSeconds, blackListRetentionSeconds);
+			databaseModule = new SqlLiteDatabaseModule(Logger, databasePath, "AC_Shield.db", dBCleanIntervalSeconds, cdrRetentionSeconds, blackListRetentionSeconds);
 			cdrReceiverModule = new CDRReceiverModule(Logger, databaseModule, cdrPort, ipGroup);
 			restModule=new RESTModule(Logger,databaseModule,restPort,cdrHistoryPeriodSeconds);
 			ruleCheckerModule = new RuleCheckerModule(Logger, databaseModule, rulesCheckIntervalSeconds, cdrHistoryPeriodSeconds, maxCallsThreshold, blackListDurationSeconds);
@@ -98,7 +99,7 @@ namespace AC_Shield.Core
 			Log(Message.Information("Waiting database module to start"));
 			while (databaseModule?.State != ModuleStates.Started)
 			{
-				this.WaitHandles(1000, QuitEvent);
+				WaitHandles(1000, QuitEvent);
 			}
 			cdrReceiverModule?.Start();
 			restModule?.Start();
@@ -127,7 +128,7 @@ namespace AC_Shield.Core
 		{
 			while(State==ModuleStates.Started)
 			{
-				this.WaitHandles(-1, QuitEvent);
+				WaitHandles(-1, QuitEvent);
 			}
 		}
 

@@ -8,29 +8,30 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace AC_Shield.Core
+namespace AC_Shield.Core.Modules
 {
+	// This module is responsible for generating dial plan CSV files from black list
 	public class DialPlanGeneratorModule:ThreadModule
 	{
-		private DatabaseModule databaseModule;
+		private IDatabaseModule databaseModule;
 		private int dialPlanGenerateIntervalSeconds;
 		private string dialPlanName ;
 		private string blackListTag;
 		private string exportPath;
 
-		public DialPlanGeneratorModule(ILogger Logger, DatabaseModule DatabaseModule, int DialPlanGenerateIntervalSeconds,string ExportPath, string DialPlanName, string BlackListTag) : base(Logger, ThreadPriority.Normal, 5000)
+		public DialPlanGeneratorModule(ILogger Logger, IDatabaseModule DatabaseModule, int DialPlanGenerateIntervalSeconds,string ExportPath, string DialPlanName, string BlackListTag) : base(Logger, ThreadPriority.Normal, 5000)
 		{
-			this.exportPath = ExportPath;
-			this.databaseModule = DatabaseModule;
-			this.dialPlanGenerateIntervalSeconds = DialPlanGenerateIntervalSeconds;
-			this.dialPlanName = DialPlanName;
-			this.blackListTag = BlackListTag;
+			exportPath = ExportPath;
+			databaseModule = DatabaseModule;
+			dialPlanGenerateIntervalSeconds = DialPlanGenerateIntervalSeconds;
+			dialPlanName = DialPlanName;
+			blackListTag = BlackListTag;
 		}
 		private void CreateCSV(BlackListItem[] Items)
 		{
 			string dialPlanFileName;
 
-			dialPlanFileName = System.IO.Path.Combine(exportPath, $"{dialPlanName}_{DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")}.csv");
+			dialPlanFileName = Path.Combine(exportPath, $"{dialPlanName}_{DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")}.csv");
 			using(FileStream stream=new FileStream(dialPlanFileName,FileMode.Create))
 			{
 				StreamWriter writer=new StreamWriter(stream);
@@ -55,7 +56,7 @@ namespace AC_Shield.Core
 			{
 				if (dialPlanGenerateIntervalSeconds==-1) duration=-1;
 				else duration=dialPlanGenerateIntervalSeconds * 1000;
-				this.WaitHandles(duration, QuitEvent);
+				WaitHandles(duration, QuitEvent);
 				if (State!=ModuleStates.Started) break;
 
 				if (!databaseModule.GetBlackList(DateTime.Now).Match(

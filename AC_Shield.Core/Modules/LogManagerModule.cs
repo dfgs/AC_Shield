@@ -8,8 +8,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace AC_Shield.Core
+namespace AC_Shield.Core.Modules
 {
+	// This module is responsible for managing log files, including rotating them at specified intervals.
 	public class LogManagerModule:ThreadModule
 	{
 		private int logRotationIntervalSeconds;
@@ -17,7 +18,7 @@ namespace AC_Shield.Core
 
 		public LogManagerModule(ILogger Logger, int LogRotationIntervalSeconds) : base(Logger, ThreadPriority.Normal, 5000)
 		{
-			this.logRotationIntervalSeconds = LogRotationIntervalSeconds;
+			logRotationIntervalSeconds = LogRotationIntervalSeconds;
 		}
 		
 
@@ -27,7 +28,7 @@ namespace AC_Shield.Core
 			Log(Message.Information("Waiting for data or quit signal"));
 			while (State == ModuleStates.Started)
 			{
-				this.WaitHandles(logRotationIntervalSeconds * 1000, QuitEvent);
+				WaitHandles(logRotationIntervalSeconds * 1000, QuitEvent);
 				if (State != ModuleStates.Started) break;
 				
 				Log(Message.Information("Rotating log file"));

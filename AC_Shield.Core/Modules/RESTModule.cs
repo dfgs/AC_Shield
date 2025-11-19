@@ -19,19 +19,20 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 
-namespace AC_Shield.Core
+namespace AC_Shield.Core.Modules
 {
+	// this module is responsible for providing REST API access to AC Shield data
 	public class RESTModule : ThreadModule
 	{
 		private int cdrRHistoryPeriodSeconds;
-		private DatabaseModule databaseModule;
+		private IDatabaseModule databaseModule;
 		private int port;
 
-		public RESTModule(LogLib.ILogger Logger, DatabaseModule DatabaseModule, int Port,int CDRHistoryPeriodSeconds) : base(Logger, ThreadPriority.Normal, 5000)
+		public RESTModule(LogLib.ILogger Logger, IDatabaseModule DatabaseModule, int Port,int CDRHistoryPeriodSeconds) : base(Logger, ThreadPriority.Normal, 5000)
 		{
-			this.databaseModule = DatabaseModule;
-			this.port = Port;
-			this.cdrRHistoryPeriodSeconds = CDRHistoryPeriodSeconds;
+			databaseModule = DatabaseModule;
+			port = Port;
+			cdrRHistoryPeriodSeconds = CDRHistoryPeriodSeconds;
 		}
 
 		private string GetCallerPermission(string Caller)
@@ -94,7 +95,7 @@ namespace AC_Shield.Core
 
 				app.RunAsync();
 
-				this.WaitHandles(-1, QuitEvent);
+				WaitHandles(-1, QuitEvent);
 
 				Log(Message.Information("Stopping web server"));
 				app.StopAsync();

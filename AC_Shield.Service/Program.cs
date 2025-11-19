@@ -1,4 +1,4 @@
-using AC_Shield.Core;
+using AC_Shield.Core.Modules;
 using AC_Shield.Service;
 using LogLib;
 using Microsoft.Extensions.Logging.Configuration;

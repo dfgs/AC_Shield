@@ -1,5 +1,5 @@
 ﻿// See https://aka.ms/new-console-template for more information
-using AC_Shield.Core;
+using AC_Shield.Core.Modules;
 using LogLib;
 using ModuleLib;
 using System;

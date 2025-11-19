@@ -9,22 +9,23 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace AC_Shield.Core
+namespace AC_Shield.Core.Modules
 {
+	// this module is responsible for checking caller reports against defined rules and updating black list accordingly
 	public class RuleCheckerModule : ThreadModule
 	{
-		private DatabaseModule databaseModule;
+		private IDatabaseModule databaseModule;
 		private int rulesCheckIntervalSeconds;
 		private int cdrRHistoryPeriodSeconds;
 		private int maxCallsThreshold;
 		private int blackListDurationSeconds;
-		public RuleCheckerModule(ILogger Logger, DatabaseModule DatabaseModule, int RulesCheckIntervalSeconds, int CDRHistoryPeriodSeconds,int MaxCallsThreshold,int BlackListDurationSeconds) : base(Logger, ThreadPriority.Normal, 5000)
+		public RuleCheckerModule(ILogger Logger, IDatabaseModule DatabaseModule, int RulesCheckIntervalSeconds, int CDRHistoryPeriodSeconds,int MaxCallsThreshold,int BlackListDurationSeconds) : base(Logger, ThreadPriority.Normal, 5000)
 		{
-			this.databaseModule = DatabaseModule;
-			this.rulesCheckIntervalSeconds = RulesCheckIntervalSeconds;
-			this.cdrRHistoryPeriodSeconds = CDRHistoryPeriodSeconds;
-			this.maxCallsThreshold = MaxCallsThreshold;
-			this.blackListDurationSeconds = BlackListDurationSeconds;
+			databaseModule = DatabaseModule;
+			rulesCheckIntervalSeconds = RulesCheckIntervalSeconds;
+			cdrRHistoryPeriodSeconds = CDRHistoryPeriodSeconds;
+			maxCallsThreshold = MaxCallsThreshold;
+			blackListDurationSeconds = BlackListDurationSeconds;
 		}
 		protected override void ThreadLoop()
 		{
@@ -34,7 +35,8 @@ namespace AC_Shield.Core
 			Log(Message.Information("Waiting for data or quit signal"));
 			while (State == ModuleStates.Started)
 			{
-				this.WaitHandles(rulesCheckIntervalSeconds*1000, QuitEvent);
+				WaitHandles(rulesCheckIntervalSeconds*1000, QuitEvent);
+				if (State != ModuleStates.Started) break;
 
 				if (!databaseModule.GetCallerReports(DateTime.Now.AddSeconds(-cdrRHistoryPeriodSeconds)).Match(
 					success => Log(Message.Information($"Caller reports collected succesfully")),
