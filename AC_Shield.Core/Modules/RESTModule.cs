@@ -1,5 +1,6 @@
 ﻿using LogLib;
 using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
@@ -184,10 +185,15 @@ namespace AC_Shield.Core.Modules
 					});
 				}
 
-				
+				// For future versions with authentication ?
+				//builder.Services.AddAuthentication("BasicAuthentication").AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", options => { });
+
 
 				var app = builder.Build();
-				
+
+				// For future versions with authentication ?
+				//app.UseAuthentication();
+
 				app.MapGet("/CallerPermission/{Caller}", (string caller) => GetCallerPermission(caller));
 				app.MapGet("/CDR/First/{Count}", (int count) => GetFirstCDRs(count));
 				app.MapGet("/CDR/Last/{Count}", (int count) => GetLastCDRs(count));
