@@ -19,13 +19,16 @@ namespace AC_Shield.Core.Modules
 		private int cdrRHistoryPeriodSeconds;
 		private int maxCallsThreshold;
 		private int blackListDurationSeconds;
-		public RuleCheckerModule(ILogger Logger, IDatabaseModule DatabaseModule, int RulesCheckIntervalSeconds, int CDRHistoryPeriodSeconds,int MaxCallsThreshold,int BlackListDurationSeconds) : base(Logger, ThreadPriority.Normal, 5000)
+		private string[] whiteList;
+
+		public RuleCheckerModule(ILogger Logger, IDatabaseModule DatabaseModule, int RulesCheckIntervalSeconds, int CDRHistoryPeriodSeconds,int MaxCallsThreshold,int BlackListDurationSeconds,params string[] WhiteList) : base(Logger, ThreadPriority.Normal, 5000)
 		{
 			databaseModule = DatabaseModule;
 			rulesCheckIntervalSeconds = RulesCheckIntervalSeconds;
 			cdrRHistoryPeriodSeconds = CDRHistoryPeriodSeconds;
 			maxCallsThreshold = MaxCallsThreshold;
 			blackListDurationSeconds = BlackListDurationSeconds;
+			this.whiteList = WhiteList;
 		}
 		protected override void ThreadLoop()
 		{
@@ -45,6 +48,11 @@ namespace AC_Shield.Core.Modules
 
 				foreach (CallerReport report in reports)
 				{
+					if (whiteList.Contains(report.Caller))
+					{
+						Log(Message.Information($"Caller {report.Caller} is in white list, skipping"));
+						continue;
+					}
 					Log(Message.Information($"Report: {report.Caller} has made {report.Count} calls during last {cdrRHistoryPeriodSeconds} seconds"));
 					if (report.Count<maxCallsThreshold) continue;
 					Log(Message.Information($"Caller {report.Caller} has reached max call threshold ({maxCallsThreshold}), adding caller to black list"));

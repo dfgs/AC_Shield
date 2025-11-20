@@ -46,7 +46,9 @@ namespace AC_Shield.Core.Modules
 			string reportFrom;
 			string reportTo;
 			string reportSubject;
-			
+			string[] whiteList;
+			string certificateName;
+
 			try
 			{
 				logPath= ConfigurationManager.AppSettings["LogPath"] ?? @"C:\ProgramData\AC_Shield";
@@ -72,6 +74,8 @@ namespace AC_Shield.Core.Modules
 				reportTo = ConfigurationManager.AppSettings["ReportTo"] ?? "report@gmail.com";
 				reportSubject= ConfigurationManager.AppSettings["ReportSubject"] ?? "AC_Shield report";
 				restPort= int.Parse(ConfigurationManager.AppSettings["RESTPort"] ?? "8080");
+				whiteList = (ConfigurationManager.AppSettings["WhiteList"] ?? "").Split('|', StringSplitOptions.RemoveEmptyEntries);
+				certificateName = ConfigurationManager.AppSettings["CertificateName"] ?? "";
 			}
 			catch (Exception ex)
 			{
@@ -83,8 +87,8 @@ namespace AC_Shield.Core.Modules
 
 			databaseModule = new SqlLiteDatabaseModule(Logger, databasePath, "AC_Shield.db", dBCleanIntervalSeconds, cdrRetentionSeconds, blackListRetentionSeconds);
 			cdrReceiverModule = new CDRReceiverModule(Logger, databaseModule, cdrPort, ipGroup);
-			restModule=new RESTModule(Logger,databaseModule,restPort,cdrHistoryPeriodSeconds);
-			ruleCheckerModule = new RuleCheckerModule(Logger, databaseModule, rulesCheckIntervalSeconds, cdrHistoryPeriodSeconds, maxCallsThreshold, blackListDurationSeconds);
+			restModule=new RESTModule(Logger,databaseModule,restPort,cdrHistoryPeriodSeconds,certificateName, whiteList);
+			ruleCheckerModule = new RuleCheckerModule(Logger, databaseModule, rulesCheckIntervalSeconds, cdrHistoryPeriodSeconds, maxCallsThreshold, blackListDurationSeconds,whiteList);
 			dialPlanGeneratorModule=new DialPlanGeneratorModule(Logger,databaseModule,dialPlanGenerateIntervalSeconds,databasePath,dialPlanName,blackListTag);
 			reportGeneratorModule= new ReportGeneratorModule(Logger,databaseModule, reportGenerationTime,smtpServer,smtpLogin,smtpPassword, reportFrom,reportTo,reportSubject);
 			logManagerModule = new LogManagerModule(Logger, logRotationIntervalSeconds);
