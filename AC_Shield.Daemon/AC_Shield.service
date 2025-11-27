@@ -1,0 +1,9 @@
+﻿[Unit]
+Description=AC_Shield
+
+[Service]
+Type=notify
+ExecStart=/usr/sbin/AC_Shield/AC_Shield.Daemon.exe
+
+[Install]
+WantedBy=multi-user.target

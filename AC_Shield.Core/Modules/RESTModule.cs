@@ -206,7 +206,7 @@ namespace AC_Shield.Core.Modules
 
 				Log(Message.Information("Stopping web server"));
 				app.StopAsync();
-				//app.D();
+				
 
 			}
 		 

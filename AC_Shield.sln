@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResultTypeLib", "..\ResultT
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AC_Shield.Service", "AC_Shield.Service\AC_Shield.Service.csproj", "{7833416A-0C41-4320-B10C-973E87ABE5A8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AC_Shield.Daemon", "AC_Shield.Daemon\AC_Shield.Daemon.csproj", "{00026B85-E5C6-47FE-83A7-1D2FDA85684B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +49,10 @@ Global
 		{7833416A-0C41-4320-B10C-973E87ABE5A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7833416A-0C41-4320-B10C-973E87ABE5A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7833416A-0C41-4320-B10C-973E87ABE5A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00026B85-E5C6-47FE-83A7-1D2FDA85684B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00026B85-E5C6-47FE-83A7-1D2FDA85684B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00026B85-E5C6-47FE-83A7-1D2FDA85684B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00026B85-E5C6-47FE-83A7-1D2FDA85684B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

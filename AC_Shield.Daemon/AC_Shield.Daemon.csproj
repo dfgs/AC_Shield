@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-AC_Shield.Daemon-5b338c50-0b6b-41e2-8387-8542285a2ead</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="3.0.0-preview7.19362.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\LogLib\LogLib\LogLib.csproj" />
+    <ProjectReference Include="..\..\ModuleLib\ModuleLib\ModuleLib.csproj" />
+    <ProjectReference Include="..\..\ResultTypeLib\ResultTypeLib\ResultTypeLib.csproj" />
+    <ProjectReference Include="..\AC_Shield.Core\AC_Shield.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="AC_Shield.service">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>
